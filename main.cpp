@@ -162,7 +162,7 @@ int main(int argc, char **argv)
 	std::string location = R"(..\)"; // TODO: FIX LOCATION
 
 	std::string reverseSlashes = location;
-	std::replace(reverseSlashes.begin(), reverseSlashes.end(), '\\', '/');
+	std::ranges::replace(reverseSlashes, '\\', '/');
 
 	std::string command;
 #if WIN32
@@ -214,6 +214,8 @@ int main(int argc, char **argv)
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
 
+	bgfx::setViewTransform(0, glm::value_ptr(view), glm::value_ptr(projection));
+
 	int64_t m_timeOffset = bx::getHPCounter();
 
 	bool quit = false;
@@ -228,7 +230,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		float time = (float)( (bx::getHPCounter()-m_timeOffset)/double(bx::getHPFrequency() ) );
+		float time = static_cast<float>((bx::getHPCounter() - m_timeOffset) / static_cast<double>(bx::getHPFrequency()));
 		float mtx[16];
 		bx::mtxRotateXY(mtx, time, time);
 		mtx[12] = 0.0f;
@@ -237,7 +239,6 @@ int main(int argc, char **argv)
 
 		bgfx::touch(0);
 		bgfx::setTransform(mtx);
-		bgfx::setViewTransform(0, glm::value_ptr(view), glm::value_ptr(projection));
 
 		bgfx::setTexture(0, smileHandle, smile);
 		bgfx::setTexture(1, containerHandle, container);
