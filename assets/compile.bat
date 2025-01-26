@@ -13,7 +13,7 @@ CALL :shaderc fs_main fragment
 EXIT /B 0
 
 :shaderc
-    set PATH_TO_SHADERS=%CD%/../
+    set PATH_TO_SHADERS=%CD%/../assets/
 
 @REM     if exist %PATH_TO_SHADERS%/%1.bin EXIT /B 0
     %PATH_TO_SHADERS%/shaderc.exe -f %PATH_TO_SHADERS%/%1.sh -o %PATH_TO_SHADERS%/%1.bin --platform windows --profile %SHADER_PROFILE% --type %2 -i %PATH_TO_SHADERS% --verbose

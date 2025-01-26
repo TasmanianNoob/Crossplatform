@@ -7,7 +7,7 @@ if [ ! -z "$1" ]; then
 fi
 
 shaderc() {
-    PATH_TO_SHADERS="../"
+    PATH_TO_SHADERS="../assets/"
 
     if [ -e "${PATH_TO_SHADERS}/${1}.bin" ]; then
         return 0

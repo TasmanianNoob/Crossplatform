@@ -16,7 +16,7 @@
 
 bgfx::ShaderHandle LoadShader(const std::string& shaderName)
 {
-	std::ifstream file("../" + std::string(shaderName) + ".bin", std::ios::binary | std::ios::ate); // TODO: FIX LOCATION
+	std::ifstream file("../assets/" + std::string(shaderName) + ".bin", std::ios::binary | std::ios::ate); // TODO: FIX LOCATION
 
 	if (!file.is_open())
 	{
@@ -46,11 +46,11 @@ bgfx::TextureHandle LoadTexture(const std::string& fileName, bool flip)
 	int nrChannels;
 
 	stbi_set_flip_vertically_on_load(flip);
-	unsigned char* data = stbi_load(("../" + fileName).c_str(), &width, &height, &nrChannels, 0); // TODO: FIX LOCATION
+	unsigned char* data = stbi_load(("../assets/" + fileName).c_str(), &width, &height, &nrChannels, 0); // TODO: FIX LOCATION
 
 	if (!data)
 	{
-		std::cout << "DATA FAILED TO LOAD: " << "textures/" + fileName << '\n';
+		std::cout << "DATA FAILED TO LOAD: " << "../assets/" + fileName << '\n';
 		return BGFX_INVALID_HANDLE;
 	}
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 #elif defined(SDL_PLATFORM_MACOS)
 	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
-#elif defined(SDL_PLATFORM_LINUX)
+#elif defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)
 	if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0)
 	{
 		init.platformData.ndt = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	std::string location = R"(..\)"; // TODO: FIX LOCATION
+	std::string location = R"(..\assets\)"; // TODO: FIX LOCATION
 
 	std::string reverseSlashes = location;
 	std::ranges::replace(reverseSlashes, '\\', '/');
