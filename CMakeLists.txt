@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 if (USING_ANDROID)
     set(VCPKG_TARGET_TRIPLET "arm64-android-dynamic" CACHE STRING "Vcpkg triplet")
+#    set(VCPKG_CHAINLOAD_TOOLCHAIN_FILE "C:/Users/charl/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake")
     include("C:/Users/charl/.vcpkg-clion/vcpkg/scripts/buildsystems/vcpkg.cmake")
 endif ()
 
@@ -13,33 +14,22 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /Zc:preprocessor")
 endif()
 
+set(INCLUDED_FILES main.cpp)
+
 if (USING_ANDROID)
-    add_library(Crossplatform SHARED main.cpp)
+    add_library(Crossplatform SHARED ${INCLUDED_FILES})
 else ()
-    add_executable(Crossplatform main.cpp)
-endif ()
-
-# SDL3
-find_package(SDL3 CONFIG REQUIRED)
-
-set(LIBRARY_TYPE STATIC)
-if (USING_ANDROID)
-    set(LIBRARY_TYPE SHARED)
+    add_executable(Crossplatform ${INCLUDED_FILES})
 endif ()
 
 # bgfx
-#find_package(bgfx CONFIG REQUIRED)
 set(BGFX_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
-set(BGFX_LIBRARY_TYPE ${LIBRARY_TYPE} CACHE STRING "" FORCE)
-set(BX_LIBRARY_TYPE ${LIBRARY_TYPE} CACHE STRING "" FORCE)
-set(BIMG_LIBRARY_TYPE ${LIBRARY_TYPE} CACHE STRING "" FORCE)
+set(BGFX_BUILD_TOOLS ON CACHE STRING "" FORCE)
+set(BGFX_BUILD_TOOLS_BIN2C ON CACHE STRING "" FORCE)
+set(BGFX_BUILD_TOOLS_SHADER ON CACHE STRING "" FORCE)
+set(BGFX_BUILD_TOOLS_GEOMETRY ON CACHE STRING "" FORCE)
+set(BGFX_BUILD_TOOLS_TEXTURE ON CACHE STRING "" FORCE)
 add_subdirectory("include/bgfx.cmake")
-
-# glm
-find_package(glm CONFIG REQUIRED)
-
-# stb(_image)
-find_package(Stb REQUIRED)
 
 if (USING_ANDROID)
     find_library(NATIVEWINDOW_LIBRARY nativewindow)
@@ -53,5 +43,14 @@ if (USING_ANDROID)
     )
 endif ()
 
+# SDL3
+find_package(SDL3 CONFIG REQUIRED)
+
+# glm
+find_package(glm CONFIG REQUIRED)
+
+# stb(_image)
+find_package(Stb REQUIRED)
+
 target_link_libraries(Crossplatform PRIVATE bx bgfx bimg bimg_decode SDL3::SDL3 glm::glm)
-target_include_directories(Crossplatform PRIVATE ${Stb_INCLUDE_DIR} include/bgfx.cmake/bgfx/include/ include/bgfx.cmake/bx/include/ include/bgfx.cmake/bimg/include)
+target_include_directories(Crossplatform PRIVATE ${Stb_INCLUDE_DIR} include/bgfx.cmake/bgfx/include/ include/bgfx.cmake/bx/include/ include/bgfx.cmake/bimg/include ${CMAKE_HOME_DIRECTORY}/..assets/shaders)

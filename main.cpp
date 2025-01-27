@@ -64,7 +64,31 @@ std::vector<char> ReadFile(const std::string& fileName)
 
 bgfx::ShaderHandle LoadShader(const std::string& shaderName)
 {
-    const std::string shaderFile = shaderName + ".bin";
+	std::string shaderType;
+	switch (bgfx::getRendererType())
+	{
+		case bgfx::RendererType::Direct3D11:
+			shaderType = "dx10/";
+		case bgfx::RendererType::Direct3D12:
+			shaderType = "dx11/";
+		break;
+		case bgfx::RendererType::Metal:
+			shaderType = "msl/";
+		break;
+		case bgfx::RendererType::OpenGL:
+			shaderType = "glsl/";
+		break;
+		case bgfx::RendererType::OpenGLES:
+			shaderType = "essl/";
+		break;
+		case bgfx::RendererType::Vulkan:
+			shaderType = "spirv/";
+		break;
+		default:
+			return BGFX_INVALID_HANDLE;
+	}
+
+    const std::string shaderFile = shaderType + shaderName + ".bin";
     const std::vector<char> data = ReadFile(shaderFile);
 
 	if (data.empty())
@@ -223,55 +247,6 @@ int main(int argc, char* args[])
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	std::string reverseSlashes = filePath;
-	std::ranges::replace(reverseSlashes, '\\', '/');
-
-	std::string command;
-#if WIN32
-	std::string platformExtension = "bat";
-#else
-	std::string platformExtension = "sh";
-#endif
-
-#if defined(SDL_PLATFORM_ANDROID)
-    std::string platform = "android";
-#elif defined(SDL_PLATFORM_WIN32)
-    std::string platform = "windows";
-#elif defined(SDL_PLATFORM_MACOS)
-    std::string platform = "osx";
-#elif defined(SDL_PLATFORM_LINUX)
-    std::string platform = "linux";
-#elif defined(SDL_PLATFORM_IOS)
-    std::string platform = "ios";
-#else
-#error Unsupported platform
-#endif
-
-	switch (bgfx::getRendererType())
-	{
-		case bgfx::RendererType::Direct3D11:
-		case bgfx::RendererType::Direct3D12:
-			command = filePath + "compile.bat s_5_0 " + platform;
-		break;
-		case bgfx::RendererType::Metal:
-			command = reverseSlashes + "compile.sh metal " + platform + " > /dev/null 2>&1";
-		break;
-		case bgfx::RendererType::OpenGL:
-			command = filePath + "compile." + platformExtension + " 440 " + platform;
-		break;
-		case bgfx::RendererType::OpenGLES:
-			command = filePath + "compile." + platformExtension + " 320_es " + platform;
-		break;
-		case bgfx::RendererType::Vulkan:
-			command = filePath + "compile" + platformExtension + " s_5_0" + platform; // TODO:
-		break;
-		default:
-			throw std::runtime_error("Unsupported renderer type: RenderInterface_BGFX::CompileShaders");
-	}
-
-	SDL_Log("%s", command.c_str());
-	SDL_Log("Compiling shaders status: %i", std::system(command.c_str()) == 0);
-
 	bgfx::VertexLayout layout;
 	layout
 		.begin()
@@ -295,7 +270,7 @@ int main(int argc, char* args[])
 
 	bgfx::setViewTransform(0, glm::value_ptr(view), glm::value_ptr(projection));
 
-	int64_t m_timeOffset = bx::getHPCounter();
+	const int64_t m_timeOffset = bx::getHPCounter();
 
 	bool quit = false;
 	SDL_Event e;
