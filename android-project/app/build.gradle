@@ -8,18 +8,18 @@ android {
     namespace "org.libsdl.app"
     compileSdkVersion 35
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 33
         targetSdkVersion 35
         versionCode 1
         versionName "1.0"
         externalNativeBuild {
             ndkBuild {
-                arguments "APP_PLATFORM=android-19"
+                arguments "APP_PLATFORM=android-33"
                 // abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
                 abiFilters 'arm64-v8a'
             }
             cmake {
-                arguments "-DANDROID_PLATFORM=android-19", "-DANDROID_STL=c++_static"
+                arguments "-DANDROID_PLATFORM=android-33", "-DANDROID_STL=c++_static", "-DUSING_ANDROID=TRUE"
                 // abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86', 'x86_64'
                 abiFilters 'arm64-v8a'
             }

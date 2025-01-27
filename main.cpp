@@ -1,10 +1,14 @@
+// #define SDL_PLATFORM_ANDROID 1
+
 #include <iostream>
+#include <vector>
 #include <fstream>
 #include <bx/timer.h>
 #include <bx/math.h>
 #include <bgfx/bgfx.h>
 #include <bgfx/platform.h>
 #include <SDL3/SDL.h>
+#include <SDL3/SDL_main.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -14,26 +18,63 @@
 
 #include "stb_image.h"
 
+#if defined(SDL_PLATFORM_ANDROID)
+std::string filePath = "";
+#elif defined(SDL_PLATFORM_WIN32)
+std::string filePath = "..\\assets\\";
+#elif defined(SDL_PLATFORM_MACOS)
+std::string filePath = ;
+#elif defined(SDL_PLATFORM_LINUX)
+std::string filePath = ;
+#elif defined(SDL_PLATFORM_IOS)
+std::string filePath = ;
+#else
+#error Unsupported platform
+#endif
+
+std::vector<char> ReadFile(const std::string& fileName)
+{
+	const std::string fullPath = filePath + fileName;
+    SDL_IOStream* file = SDL_IOFromFile(fullPath.c_str(), "rb");
+    std::vector<char> data;
+
+    if (!file)
+    {
+	    SDL_Log("File (%s) failed to load: %s", fullPath.c_str(), SDL_GetError());
+	    SDL_CloseIO(file);
+	    return data;
+    }
+
+    const int64_t size = SDL_SeekIO(file, 0, SDL_IO_SEEK_END);
+	data.resize(size);
+    // auto* data = new char[size];
+
+    // go back to the start of the file. TODO: Is this right?
+    SDL_SeekIO(file, -size, SDL_IO_SEEK_END);
+    if (SDL_ReadIO(file, data.data(), size) == 0 && SDL_GetIOStatus(file) != SDL_IO_STATUS_EOF)
+    {
+        SDL_Log("File (%s) failed to read: %s", fullPath.c_str(), SDL_GetError());
+		SDL_CloseIO(file);
+        return data;
+    }
+
+    SDL_CloseIO(file);
+    return data;
+}
+
 bgfx::ShaderHandle LoadShader(const std::string& shaderName)
 {
-	std::ifstream file("../assets/" + std::string(shaderName) + ".bin", std::ios::binary | std::ios::ate); // TODO: FIX LOCATION
+    const std::string shaderFile = shaderName + ".bin";
+    const std::vector<char> data = ReadFile(shaderFile);
 
-	if (!file.is_open())
+	if (data.empty())
 	{
 		return BGFX_INVALID_HANDLE;
 	}
 
-	size_t fileSize = file.tellg();
-	file.seekg(0, std::ios::beg);
+	const bgfx::Memory* const mem = bgfx::copy(data.data(), static_cast<uint32_t>(data.size()));
 
-	char* data = new char[fileSize];
-	file.read(data, fileSize);
-	file.close();
-
-	const bgfx::Memory* const mem = bgfx::copy(data, static_cast<uint32_t>(fileSize));
-	delete[] data;
-
-	auto handle = bgfx::createShader(mem);
+	const bgfx::ShaderHandle handle = bgfx::createShader(mem);
 	bgfx::setName(handle, shaderName.c_str());
 
 	return handle;
@@ -41,31 +82,49 @@ bgfx::ShaderHandle LoadShader(const std::string& shaderName)
 
 bgfx::TextureHandle LoadTexture(const std::string& fileName, bool flip)
 {
+	const std::vector<char> data = ReadFile(fileName);
+
+	if (data.empty())
+	{
+		return BGFX_INVALID_HANDLE;
+	}
+
 	int width;
 	int height;
 	int nrChannels;
 
 	stbi_set_flip_vertically_on_load(flip);
-	unsigned char* data = stbi_load(("../assets/" + fileName).c_str(), &width, &height, &nrChannels, 0); // TODO: FIX LOCATION
+	unsigned char* img = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(data.data()), data.size(), &width, &height, &nrChannels, 0); // TODO: FIX LOCATION
 
-	if (!data)
+	if (!img)
 	{
-		std::cout << "DATA FAILED TO LOAD: " << "../assets/" + fileName << '\n';
+        SDL_Log("Invalid image data for %s", fileName.c_str());
 		return BGFX_INVALID_HANDLE;
 	}
-
 	const size_t imageSize = width * height * nrChannels;
-	const bgfx::Memory* memory = bgfx::copy(data, imageSize);
-
-	stbi_image_free(data);
+	const bgfx::Memory* memory = bgfx::copy(img, imageSize);
+	stbi_image_free(img);
 
 	return bgfx::createTexture2D(width, height, false, 1, nrChannels == 3 ? bgfx::TextureFormat::RGB8 : bgfx::TextureFormat::RGBA8, BGFX_SAMPLER_UVW_MIRROR, memory);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char* args[])
 {
 	int width = 800;
 	int height = 600;
+
+	const SDL_DisplayMode* displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
+
+	if (displayMode)
+	{
+		width = displayMode->w;
+		height = displayMode->h;
+	}
+	else
+	{
+		// is this an iOS thing?
+		SDL_Log("Failed display size.");
+	}
 
 	if (!SDL_Init(SDL_INIT_VIDEO))
 	{
@@ -74,7 +133,7 @@ int main(int argc, char **argv)
 
 	//TODO: CONFIG IF FULLSCREEN glfwGetPrimaryMonitor() ELSE nullptr
 	//WIDTH AND HEIGHT WOULD NEED TO BE SET TO ACTUAL SCREEN SIZE
-	SDL_Window* window = SDL_CreateWindow("testing 123", width, height, SDL_WINDOW_RESIZABLE);
+	SDL_Window* window = SDL_CreateWindow("testing 123", width, height, SDL_WINDOW_FULLSCREEN/*SDL_WINDOW_RESIZABLE*/);
 
 	if (window == nullptr)
 	{
@@ -83,12 +142,17 @@ int main(int argc, char **argv)
 
 	int fbWidth = 0, fbHeight = 0;
 
+	SDL_Log("Hello LogCat!");
+
 	bgfx::Init init;
-#if defined(SDL_PLATFORM_WIN32)
+#if defined(SDL_PLATFORM_ANDROID)
+	init.platformData.ndt = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_ANDROID_SURFACE_POINTER, nullptr);
+	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, nullptr);
+#elif defined(SDL_PLATFORM_WIN32)
 	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
 #elif defined(SDL_PLATFORM_MACOS)
 	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
-#elif defined(SDL_PLATFORM_LINUX) || defined(SDL_PLATFORM_ANDROID)
+#elif defined(SDL_PLATFORM_LINUX)
 	if (SDL_strcmp(SDL_GetCurrentVideoDriver(), "x11") == 0)
 	{
 		init.platformData.ndt = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr);
@@ -159,9 +223,7 @@ int main(int argc, char **argv)
 		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	std::string location = R"(..\assets\)"; // TODO: FIX LOCATION
-
-	std::string reverseSlashes = location;
+	std::string reverseSlashes = filePath;
 	std::ranges::replace(reverseSlashes, '\\', '/');
 
 	std::string command;
@@ -171,27 +233,44 @@ int main(int argc, char **argv)
 	std::string platformExtension = "sh";
 #endif
 
+#if defined(SDL_PLATFORM_ANDROID)
+    std::string platform = "android";
+#elif defined(SDL_PLATFORM_WIN32)
+    std::string platform = "windows";
+#elif defined(SDL_PLATFORM_MACOS)
+    std::string platform = "osx";
+#elif defined(SDL_PLATFORM_LINUX)
+    std::string platform = "linux";
+#elif defined(SDL_PLATFORM_IOS)
+    std::string platform = "ios";
+#else
+#error Unsupported platform
+#endif
+
 	switch (bgfx::getRendererType())
 	{
 		case bgfx::RendererType::Direct3D11:
 		case bgfx::RendererType::Direct3D12:
-			command = location + "compile.bat s_5_0";
+			command = filePath + "compile.bat s_5_0 " + platform;
 		break;
 		case bgfx::RendererType::Metal:
-			command = reverseSlashes + "compile.sh metal > /dev/null 2>&1";
+			command = reverseSlashes + "compile.sh metal " + platform + " > /dev/null 2>&1";
 		break;
 		case bgfx::RendererType::OpenGL:
-			command = location + "compile." + platformExtension + " 440";
+			command = filePath + "compile." + platformExtension + " 440 " + platform;
+		break;
+		case bgfx::RendererType::OpenGLES:
+			command = filePath + "compile." + platformExtension + " 320_es " + platform;
 		break;
 		case bgfx::RendererType::Vulkan:
-			command = location + "compile" + platformExtension + " s_5_0"; // TODO:
+			command = filePath + "compile" + platformExtension + " s_5_0" + platform; // TODO:
 		break;
 		default:
 			throw std::runtime_error("Unsupported renderer type: RenderInterface_BGFX::CompileShaders");
 	}
 
-	std::cout << command << '\n';
-	assert(std::system(command.c_str()) == 0);
+	SDL_Log("%s", command.c_str());
+	SDL_Log("Compiling shaders status: %i", std::system(command.c_str()) == 0);
 
 	bgfx::VertexLayout layout;
 	layout
@@ -230,7 +309,7 @@ int main(int argc, char **argv)
 			}
 		}
 
-		float time = static_cast<float>((bx::getHPCounter() - m_timeOffset) / static_cast<double>(bx::getHPFrequency()));
+		auto time = static_cast<float>((bx::getHPCounter() - m_timeOffset) / static_cast<double>(bx::getHPFrequency()));
 		float mtx[16];
 		bx::mtxRotateXY(mtx, time, time);
 		mtx[12] = 0.0f;

@@ -6,6 +6,8 @@ if [ ! -z "$1" ]; then
   SHADER_PROFILE=$1
 fi
 
+PLATFORM=$2
+
 shaderc() {
     PATH_TO_SHADERS="../assets/"
 
@@ -13,7 +15,7 @@ shaderc() {
         return 0
     fi
 
-    ${PATH_TO_SHADERS}/shaderc -f ${PATH_TO_SHADERS}/${1}.sh -o ${PATH_TO_SHADERS}/${1}.bin --platform osx --profile ${SHADER_PROFILE} --type ${2} -i ${PATH_TO_SHADERS} --verbose
+    ${PATH_TO_SHADERS}/shaderc -f ${PATH_TO_SHADERS}/${1}.sh -o ${PATH_TO_SHADERS}/${1}.bin --platform ${PLATFORM} --profile ${SHADER_PROFILE} --type ${2} -i ${PATH_TO_SHADERS} --verbose
 
     if [ $? -ne 0 ]; then
         exit $?
@@ -26,6 +28,6 @@ shaderc() {
 shaderc vs_main vertex
 
 # Fragment Shaders
-shaderc fs_colour_rmlui fragment
+shaderc fs_main fragment
 
 exit 0
