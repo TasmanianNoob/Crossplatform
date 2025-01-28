@@ -25,7 +25,7 @@ std::string filePath = "..\\assets\\";
 #elif defined(SDL_PLATFORM_MACOS)
 std::string filePath = ;
 #elif defined(SDL_PLATFORM_LINUX)
-std::string filePath = ;
+std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_IOS)
 std::string filePath = ;
 #else
