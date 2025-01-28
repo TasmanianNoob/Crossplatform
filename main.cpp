@@ -23,7 +23,7 @@ std::string filePath = "";
 #elif defined(SDL_PLATFORM_WIN32)
 std::string filePath = "..\\assets\\";
 #elif defined(SDL_PLATFORM_MACOS)
-std::string filePath = ;
+std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_LINUX)
 std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_IOS)
@@ -268,8 +268,6 @@ int main(int argc, char* args[])
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
 
-	bgfx::setViewTransform(0, glm::value_ptr(view), glm::value_ptr(projection));
-
 	const int64_t m_timeOffset = bx::getHPCounter();
 
 	bool quit = false;
@@ -292,6 +290,7 @@ int main(int argc, char* args[])
 		mtx[14] = 0.0f;
 
 		bgfx::touch(0);
+		bgfx::setViewTransform(0, glm::value_ptr(view), glm::value_ptr(projection));
 		bgfx::setTransform(mtx);
 
 		bgfx::setTexture(0, smileHandle, smile);
