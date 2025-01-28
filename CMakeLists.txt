@@ -20,6 +20,10 @@ endif()
 
 set(INCLUDED_FILES main.cpp)
 
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(INCLUDED_FILES ${INCLUDED_FILES} sdl_bgfx_ios.h sdl_bgfx_ios.mm)
+endif ()
+
 if (USING_ANDROID)
     add_library(Crossplatform SHARED ${INCLUDED_FILES})
 else ()

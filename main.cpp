@@ -13,6 +13,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#if defined(SDL_PLATFORM_IOS)
+#include "sdl_bgfx_ios.h"
+#endif
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <algorithm>
 
@@ -31,12 +35,12 @@ std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_LINUX)
 std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_IOS)
-std::string filePath = ;
+std::string filePath = "";
 #else
 #error Unsupported platform
 #endif
 
-std::vector<char> ReadFile(const std::string& fileName)
+std::vector<char> ReadFile( const std::string& fileName)
 {
 	const std::string fullPath = filePath + fileName;
     SDL_IOStream* file = SDL_IOFromFile(fullPath.c_str(), "rb");
@@ -51,7 +55,6 @@ std::vector<char> ReadFile(const std::string& fileName)
 
     const int64_t size = SDL_SeekIO(file, 0, SDL_IO_SEEK_END);
 	data.resize(size);
-    // auto* data = new char[size];
 
     // go back to the start of the file. TODO: Is this right?
     SDL_SeekIO(file, -size, SDL_IO_SEEK_END);
@@ -72,21 +75,22 @@ bgfx::ShaderHandle LoadShader(const std::string& shaderName)
 	switch (bgfx::getRendererType())
 	{
 		case bgfx::RendererType::Direct3D11:
-			shaderType = "dx10/";
+			shaderType = "dx10_";
+        break;
 		case bgfx::RendererType::Direct3D12:
-			shaderType = "dx11/";
+			shaderType = "dx11_";
 		break;
 		case bgfx::RendererType::Metal:
-			shaderType = "msl/";
+			shaderType = "msl_";
 		break;
 		case bgfx::RendererType::OpenGL:
-			shaderType = "glsl/";
+			shaderType = "glsl_";
 		break;
 		case bgfx::RendererType::OpenGLES:
-			shaderType = "essl/";
+			shaderType = "essl_";
 		break;
 		case bgfx::RendererType::Vulkan:
-			shaderType = "spirv/";
+			shaderType = "spirv_";
 		break;
 		default:
 			return BGFX_INVALID_HANDLE;
@@ -122,7 +126,7 @@ bgfx::TextureHandle LoadTexture(const std::string& fileName, bool flip)
 	int nrChannels;
 
 	stbi_set_flip_vertically_on_load(flip);
-	unsigned char* img = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(data.data()), data.size(), &width, &height, &nrChannels, 0); // TODO: FIX LOCATION
+	unsigned char* img = stbi_load_from_memory(reinterpret_cast<stbi_uc const*>(data.data()), data.size(), &width, &height, &nrChannels, 0);
 
 	if (!img)
 	{
@@ -140,20 +144,9 @@ int main(int argc, char* args[])
 {
 	int width = 800;
 	int height = 600;
-
-	const SDL_DisplayMode* displayMode = SDL_GetCurrentDisplayMode(SDL_GetPrimaryDisplay());
-
-	if (displayMode)
-	{
-		width = displayMode->w;
-		height = displayMode->h;
-	}
-	else
-	{
-		// is this an iOS thing?
-		SDL_Log("Failed display size.");
-	}
-
+    
+    SDL_SetHint(SDL_HINT_IOS_HIDE_HOME_INDICATOR, "2");
+    
 	if (!SDL_Init(SDL_INIT_VIDEO))
 	{
 		return 1;
@@ -161,7 +154,7 @@ int main(int argc, char* args[])
 
 	//TODO: CONFIG IF FULLSCREEN glfwGetPrimaryMonitor() ELSE nullptr
 	//WIDTH AND HEIGHT WOULD NEED TO BE SET TO ACTUAL SCREEN SIZE
-	SDL_Window* window = SDL_CreateWindow("testing 123", width, height, SDL_WINDOW_FULLSCREEN/*SDL_WINDOW_RESIZABLE*/);
+	SDL_Window* window = SDL_CreateWindow("testing 123", width, height, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY | SDL_WINDOW_BORDERLESS);
 
 	if (window == nullptr)
 	{
@@ -192,7 +185,7 @@ int main(int argc, char* args[])
 		init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr);
 	}
 #elif defined(SDL_PLATFORM_IOS)
-	init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER, nullptr);
+    init.platformData.nwh = CreateMetalLayer(SDL_GetPointerProperty(SDL_GetWindowProperties(window), SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER, nullptr));
 #else
 #error Unsupported platform
 #endif
@@ -201,6 +194,8 @@ int main(int argc, char* args[])
 	init.resolution.width = static_cast<uint32_t>(fbWidth);
 	init.resolution.height = static_cast<uint32_t>(fbHeight);
 	init.resolution.reset = BGFX_RESET_VSYNC; //TODO: CONFIG SYSTEM
+//    init.resolution.format = bgfx::TextureFormat::BGRA8;
+	SDL_Log("%i", (int) init.resolution.format);
 
 	bgfx::renderFrame();
 	bgfx::init(init);
@@ -273,6 +268,12 @@ int main(int argc, char* args[])
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
 
 	const int64_t m_timeOffset = bx::getHPCounter();
+    
+    int testW, testH;
+    SDL_GetWindowSize(window, &testW, &testH);
+    SDL_Log("Size: %ix%i", testW, testH);
+    SDL_GetWindowSizeInPixels(window, &testW, &testH);
+    SDL_Log("Pixels: %ix%i", testW, testH);
 
 	bool quit = false;
 	SDL_Event e;
