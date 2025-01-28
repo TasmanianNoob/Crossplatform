@@ -10,6 +10,10 @@ project(Crossplatform)
 
 set(CMAKE_CXX_STANDARD 20)
 
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+    add_definitions(-DXCODE_BUILD)
+endif()
+
 if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /Zc:preprocessor")
 endif()

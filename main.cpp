@@ -23,7 +23,11 @@ std::string filePath = "";
 #elif defined(SDL_PLATFORM_WIN32)
 std::string filePath = "..\\assets\\";
 #elif defined(SDL_PLATFORM_MACOS)
+#if defined(XCODE_BUILD)
+std::string filePath = "../../assets/";
+#else
 std::string filePath = "../assets/";
+#endif
 #elif defined(SDL_PLATFORM_LINUX)
 std::string filePath = "../assets/";
 #elif defined(SDL_PLATFORM_IOS)
