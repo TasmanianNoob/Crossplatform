@@ -7,5 +7,5 @@ SAMPLER2D(_texContainer, 1);
 
 void main()
 {
-	gl_FragColor = mix(texture2D(_texSmile, v_texcoord0).bgra, texture2D(_texContainer, v_texcoord0).bgra, 0.5);
+	gl_FragColor = mix(texture2D(_texSmile, v_texcoord0), texture2D(_texContainer, v_texcoord0), 0.5);
 }

@@ -145,6 +145,7 @@ int main(int argc, char* args[])
 	int width = 800;
 	int height = 600;
     
+    SDL_SetHint(SDL_HINT_ORIENTATIONS, "LandscapeLeft LandscapeRight");
     SDL_SetHint(SDL_HINT_IOS_HIDE_HOME_INDICATOR, "2");
     
 	if (!SDL_Init(SDL_INIT_VIDEO))
@@ -194,8 +195,6 @@ int main(int argc, char* args[])
 	init.resolution.width = static_cast<uint32_t>(fbWidth);
 	init.resolution.height = static_cast<uint32_t>(fbHeight);
 	init.resolution.reset = BGFX_RESET_VSYNC; //TODO: CONFIG SYSTEM
-//    init.resolution.format = bgfx::TextureFormat::BGRA8;
-	SDL_Log("%i", (int) init.resolution.format);
 
 	bgfx::renderFrame();
 	bgfx::init(init);
@@ -268,12 +267,6 @@ int main(int argc, char* args[])
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
 
 	const int64_t m_timeOffset = bx::getHPCounter();
-    
-    int testW, testH;
-    SDL_GetWindowSize(window, &testW, &testH);
-    SDL_Log("Size: %ix%i", testW, testH);
-    SDL_GetWindowSizeInPixels(window, &testW, &testH);
-    SDL_Log("Pixels: %ix%i", testW, testH);
 
 	bool quit = false;
 	SDL_Event e;

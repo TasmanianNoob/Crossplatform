@@ -18,7 +18,7 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zc:__cplusplus /Zc:preprocessor")
 endif()
 
-set(INCLUDED_FILES main.cpp)
+set(INCLUDED_FILES main.cpp Base.lproj/LaunchScreen.storyboard)
 
 if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
     set(INCLUDED_FILES ${INCLUDED_FILES} sdl_bgfx_ios.h sdl_bgfx_ios.mm)
@@ -29,6 +29,28 @@ if (USING_ANDROID)
 else ()
     add_executable(Crossplatform ${INCLUDED_FILES})
 endif ()
+
+if (CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(input_root "${CMAKE_CURRENT_LIST_DIR}/assets")
+
+    macro(add_resource FILE)
+        file(RELATIVE_PATH relpath "${input_root}" "${FILE}")
+        get_filename_component(relpath "${relpath}" DIRECTORY)
+        target_sources(Crossplatform PRIVATE ${FILE})
+        set_property(SOURCE ${FILE} PROPERTY MACOSX_PACKAGE_LOCATION "Resources/${relpath}")
+    endmacro()
+
+    file(GLOB_RECURSE ASSET_FILES "${CMAKE_CURRENT_LIST_DIR}/assets/*")
+    foreach(ASSET ${ASSET_FILES})
+        add_resource(${ASSET})
+    endforeach()
+endif ()
+
+set_target_properties(Crossplatform PROPERTIES
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_LIST_DIR}/Info.plist
+        XCODE_ATTRIBUTE_BUNDLE_IDENTIFIER com.tasmanainnoob.crossplatform-ios
+        XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.tasmanainnoob.crossplatform-ios
+)
 
 # bgfx
 set(BGFX_BUILD_EXAMPLES OFF CACHE STRING "" FORCE)
