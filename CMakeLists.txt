@@ -61,9 +61,14 @@ if (USING_ANDROID)
     find_library(GLESV2_LIBRARY GLESv2)
 
     target_link_libraries(Crossplatform PRIVATE ${NATIVEWINDOW_LIBRARY} ${EGL_LIBRARY} ${GLESV2_LIBRARY})
+endif ()
 
 # SDL3
-add_subdirectory("include/SDL")
+if (USING_ANDROID)
+    add_subdirectory("include/SDL")
+else ()
+    find_package(SDL3 CONFIG REQUIRED)
+endif ()
 
 # glm
 find_package(glm CONFIG REQUIRED)
@@ -71,5 +76,9 @@ find_package(glm CONFIG REQUIRED)
 # stb(_image)
 find_package(Stb REQUIRED)
 
-target_link_libraries(Crossplatform PRIVATE bgfx::bx bgfx::bgfx bgfx::bimg bgfx::bimg_decode SDL3::SDL3-shared glm::glm)
-target_include_directories(Crossplatform PRIVATE ${Stb_INCLUDE_DIR} SDL3::Headers ${CMAKE_HOME_DIRECTORY}/..assets/shaders)
+target_link_libraries(Crossplatform PRIVATE bgfx::bx bgfx::bgfx bgfx::bimg bgfx::bimg_decode SDL3::SDL3 glm::glm)
+target_include_directories(Crossplatform PRIVATE ${Stb_INCLUDE_DIR} ${CMAKE_HOME_DIRECTORY}/..assets/shaders)
+
+if (USING_ANDROID)
+    target_include_directories(Crossplatform PRIVATE SDL3::Headers)
+endif ()
