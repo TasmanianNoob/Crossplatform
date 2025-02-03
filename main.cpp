@@ -260,8 +260,8 @@ int main(int argc, char* args[])
 	const bgfx::ShaderHandle fragShader = LoadShader("fs_main");
 	bgfx::ProgramHandle program = bgfx::createProgram(vertShader, fragShader, true);
 
-	bgfx::TextureHandle smile = LoadTexture("awesomeface.png", true);
-	bgfx::TextureHandle container = LoadTexture("container.jpg", true);
+	bgfx::TextureHandle smile = LoadTexture("Test/awesomeface.png", true);
+	bgfx::TextureHandle container = LoadTexture("Test/container.jpg", true);
 
 	glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -3.0f));
 	glm::mat4 projection = glm::perspective(glm::radians(45.0f), static_cast<float>(width) / static_cast<float>(height), 0.1f, 100.0f);
